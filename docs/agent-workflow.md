@@ -161,6 +161,9 @@ Minimum checks before merge:
 
 ## Prompting Rules For Worker Agents
 
+Use the **Agent Task** issue template (`.github/ISSUE_TEMPLATE/agent-task.md`)
+when creating issues for agents. It includes all required fields.
+
 A worker task prompt should include:
 
 - task id and title
