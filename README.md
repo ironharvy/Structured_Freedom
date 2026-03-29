@@ -113,3 +113,22 @@ the box.
 `Evennia` is worth studying as a reference, but a custom backend may be the
 better fit if the project needs a strict boundary between simulation and AI
 interpretation.
+
+## Multi-Agent Development
+
+This project is developed collaboratively by multiple AI agents. See [AGENTS.md](AGENTS.md) for coordination guidelines.
+
+| Agent  | Config File     | Branch Prefix |
+|--------|-----------------|---------------|
+| Claude | `CLAUDE.md`     | `claude/`     |
+| Codex  | `CODEX.md`      | `codex/`      |
+| Cursor | `.cursorrules`  | `cursor/`     |
+| Jules  | `JULES.md`      | `jules/`      |
+
+## Contributing
+
+1. Check open issues for available tasks
+2. Create a feature branch following the naming convention in AGENTS.md
+3. Make changes with tests
+4. Open a PR against `main`
+5. Wait for CI and human review
