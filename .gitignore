@@ -1,12 +1,48 @@
+# Python
 .venv/
+venv/
 __pycache__/
+*.py[cod]
+*.egg-info/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
 .cache/
-.logs/
-.DS_Store
-*.py[cod]
-*.egg-info/
-.env
+.coverage
+htmlcov/
 
+# Node
+node_modules/
+.nyc_output/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+logs/
+.logs/
+
+# Runtime
+*.pid
+*.sock
+
+# Coverage
+coverage/
