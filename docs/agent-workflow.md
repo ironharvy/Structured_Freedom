@@ -37,7 +37,7 @@ Optional role.
 Responsibilities:
 
 - turn milestones into bounded tasks
-- update `docs/tasks.md`
+- create and manage GitHub Issues for tasks
 - keep task scope small and reviewable
 - point workers to the right docs and decisions
 
@@ -71,7 +71,7 @@ Before taking a task, every agent should read:
 - `docs/architecture.md`
 - `docs/development.md`
 - `docs/decisions.md`
-- the specific entry in `docs/tasks.md`
+- the assigned GitHub Issue for the task
 
 Agents should not rely on previous chat memory alone.
 
@@ -142,7 +142,7 @@ Recommended flow:
 4. run checks
 5. submit for review
 6. merge
-7. update `docs/tasks.md`
+7. close the GitHub Issue via PR
 
 ## Review Requirements
 
@@ -197,7 +197,7 @@ Bad:
 To reduce conflicts:
 
 - use `docs/decisions.md` as architecture truth
-- use `docs/tasks.md` as the task ledger
+- use GitHub Issues as the task ledger
 - avoid parallel edits to shared foundation files
 - finish core infrastructure tasks before parallelizing feature work
 
