@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Propose a new feature for the MUD generator
+about: Propose a new feature for Structured Freedom
 labels: enhancement
 ---
 

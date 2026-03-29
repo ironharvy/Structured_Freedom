@@ -7,29 +7,35 @@ on:
     branches: [main]
 
 jobs:
-  check:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate structure
-        run: |
-          echo "Checking required files exist..."
-          test -f AGENTS.md || (echo "Missing AGENTS.md" && exit 1)
-          test -f README.md || (echo "Missing README.md" && exit 1)
-          echo "Structure check passed."
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-      # TODO: Add language-specific linting and testing once tech stack is chosen
-      # Example for Python:
-      # - uses: actions/setup-python@v5
-      #   with:
-      #     python-version: '3.12'
-      # - run: pip install -r requirements.txt
-      # - run: pytest tests/
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
 
-      # Example for Node.js:
-      # - uses: actions/setup-node@v4
-      #   with:
-      #     node-version: '20'
-      # - run: npm ci
-      # - run: npm test
+      - name: Lint with ruff
+        run: ruff check .
+
+      - name: Check formatting with ruff
+        run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run tests
+        run: pytest tests/
