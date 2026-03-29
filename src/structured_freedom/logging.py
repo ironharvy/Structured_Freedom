@@ -24,4 +24,3 @@ def configure_logging(level: str = "INFO") -> None:
     formatter = logging.Formatter("%(message)s")
     handler.setFormatter(formatter)
     root_logger.addHandler(handler)
-

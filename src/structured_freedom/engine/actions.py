@@ -9,4 +9,3 @@ class ActionResult:
 
     success: bool
     message: str
-

@@ -14,4 +14,3 @@ def test_settings_support_explicit_values() -> None:
     assert settings.app_env == "test"
     assert settings.log_level == "DEBUG"
     assert settings.ai_provider == "ollama"
-

@@ -20,4 +20,3 @@ def create_session_factory(settings: Settings | None = None):
     """Create a SQLAlchemy session factory."""
     engine = create_db_engine(settings)
     return sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
-

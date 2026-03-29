@@ -14,4 +14,3 @@ def run_turn(action_text: str) -> ActionResult:
     result = validate_player_action(action_text)
     logger.info("validation_success=%s message=%r", result.success, result.message)
     return result
-

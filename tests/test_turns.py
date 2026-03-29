@@ -13,4 +13,3 @@ def test_absurd_action_is_rejected() -> None:
 
     assert result.success is False
     assert result.message == "That is not possible in this world."
-
