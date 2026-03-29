@@ -1,0 +1,2 @@
+"""Structured Freedom package."""
+

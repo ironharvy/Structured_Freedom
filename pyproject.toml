@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "structured-freedom"
+version = "0.1.0"
+description = "Structured Freedom MVP scaffold"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "alembic>=1.14,<2.0",
+  "dspy>=2.6,<3.0",
+  "pydantic-settings>=2.7,<3.0",
+  "rich>=13.9,<14.0",
+  "sqlalchemy>=2.0,<3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9.0",
+  "ruff>=0.11,<0.12",
+]
+
+[project.scripts]
+structured-freedom = "structured_freedom.client.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
