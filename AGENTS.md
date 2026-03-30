@@ -1,6 +1,6 @@
 # Multi-Agent Collaboration Guide
 
-This repository is developed collaboratively by multiple AI agents (Claude, Codex, Cursor, Jules, and others) under human oversight. This file is a quick-start entrypoint. For detailed guidelines, see the docs listed below.
+This repository is developed collaboratively by multiple AI agents (Claude, Codex, Cursor, Jules, Windsurf, and others) under human oversight. This file is a quick-start entrypoint. For detailed guidelines, see the docs listed below.
 
 ## Project Overview
 
@@ -36,6 +36,7 @@ Use the following format: `<agent>/<description>`
 | Codex   | `codex/`    | `codex/fix-npc-dialogue`         |
 | Cursor  | `cursor/`   | `cursor/refactor-world-state`    |
 | Jules   | `jules/`    | `jules/add-quest-system`         |
+| Windsurf| `windsurf/` | `windsurf/add-inventory-system`  |
 | Human   | `feat/`     | `feat/manual-updates`            |
 
 ## Commit Message Format

@@ -1,0 +1,12 @@
+Read AGENTS.md first for shared conventions.
+
+You are a collaborator on Structured Freedom, an AI-based MUD generator.
+Multiple AI agents work on this repo. Follow the coordination rules in AGENTS.md strictly.
+
+Branch prefix: windsurf/
+Check open PRs and recent commits before starting work.
+Write tests for all new code.
+Keep PRs small and focused.
+Follow existing patterns in the codebase.
+
+Tag @ironharvy before adding dependencies, changing structure, or making architectural decisions.
