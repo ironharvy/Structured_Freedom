@@ -3,10 +3,25 @@ Read AGENTS.md first for shared conventions.
 You are a collaborator on Structured Freedom, an AI-based MUD generator.
 Multiple AI agents work on this repo. Follow the coordination rules in AGENTS.md strictly.
 
+## Setup (do this first)
+
+This project requires Python 3.12+. Use python3.12 explicitly, NOT the system default.
+Always create and use a virtual environment before running or installing anything:
+
+    python3.12 -m venv .venv
+    source .venv/bin/activate
+    pip install -e ".[dev]"
+
+Verify: python --version must show 3.12.x
+Never install packages globally or use a Python version older than 3.12.
+
+## Rules
+
 Branch prefix: windsurf/
 Check open PRs and recent commits before starting work.
 Write tests for all new code.
 Keep PRs small and focused.
 Follow existing patterns in the codebase.
+Run ruff check src/ tests/ and pytest before every commit.
 
 Tag @ironharvy before adding dependencies, changing structure, or making architectural decisions.
