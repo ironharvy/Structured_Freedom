@@ -22,6 +22,13 @@ from structured_freedom.models import Item, Player, WorldState
 
 def validate_move(player: Player, world: WorldState, direction: str) -> ActionResult:
     """Check whether *player* can move in *direction* from their current location."""
+    normalized_direction = direction.strip().lower()
+    if not normalized_direction:
+        return ActionResult(
+            success=False,
+            message="You must specify a direction to move.",
+        )
+
     if player.current_location not in world.locations:
         return ActionResult(
             success=False,
@@ -33,30 +40,40 @@ def validate_move(player: Player, world: WorldState, direction: str) -> ActionRe
 
     location = world.locations[player.current_location]
 
-    if not location.has_connection(direction):
+    if not location.has_connection(normalized_direction):
         return ActionResult(
             success=False,
-            message=f"There is no exit to the {direction} from {location.name}.",
+            message=(
+                f"There is no exit to the {normalized_direction} "
+                f"from {location.name}."
+            ),
         )
 
-    flag_key = f"{player.current_location}_{direction}_blocked"
+    flag_key = f"{player.current_location}_{normalized_direction}_blocked"
     if world.get_flag(flag_key):
         return ActionResult(
             success=False,
-            message=f"The way {direction} is blocked.",
+            message=f"The way {normalized_direction} is blocked.",
         )
 
-    destination_id = location.get_connection(direction)
+    destination_id = location.get_connection(normalized_direction)
+    if destination_id == player.current_location:
+        return ActionResult(
+            success=False,
+            message="You are already there.",
+        )
+
     return ActionResult(
         success=True,
-        message=f"You move {direction} to {destination_id}.",
+        message=f"You move {normalized_direction} to {destination_id}.",
     )
 
 
 def resolve_move(player: Player, world: WorldState, direction: str) -> None:
     """Apply a validated move: update the player's current location."""
+    normalized_direction = direction.strip().lower()
     location = world.locations[player.current_location]
-    destination_id = location.get_connection(direction)
+    destination_id = location.get_connection(normalized_direction)
     if destination_id is not None:
         player.move_to(destination_id)
 
