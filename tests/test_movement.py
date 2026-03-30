@@ -1,6 +1,5 @@
 """Tests for the movement system."""
 
-
 from structured_freedom.engine.movement import move_player
 from structured_freedom.models.location import Location, build_mvp_map
 from structured_freedom.models.player import Player
