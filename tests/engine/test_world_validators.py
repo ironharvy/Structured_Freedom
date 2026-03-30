@@ -120,6 +120,51 @@ class TestValidateMove:
 
         assert result.success is True
 
+    def test_fails_when_empty_direction(self) -> None:
+        player = _player(location="village")
+        world = _world()
+
+        result = validate_move(player, world, "")
+
+        assert result.success is False
+        assert "specify a direction" in result.message.lower()
+
+    def test_fails_when_whitespace_direction(self) -> None:
+        player = _player(location="village")
+        world = _world()
+
+        result = validate_move(player, world, "   ")
+
+        assert result.success is False
+        assert "specify a direction" in result.message.lower()
+
+    def test_fails_when_self_referential_connection(self) -> None:
+        """A location that connects to itself should be rejected."""
+        player = _player(location="village")
+        world = _world(
+            locations={
+                "village": Location(
+                    id="village",
+                    name="Village",
+                    connections={"circle": "village"},
+                ),
+            }
+        )
+
+        result = validate_move(player, world, "circle")
+
+        assert result.success is False
+        assert "already there" in result.message.lower()
+
+    def test_direction_is_case_insensitive(self) -> None:
+        player = _player(location="village")
+        world = _world()
+
+        result = validate_move(player, world, "NORTH")
+
+        assert result.success is True
+        assert "gate" in result.message.lower()
+
 
 class TestResolveMove:
     def test_updates_player_location(self) -> None:
