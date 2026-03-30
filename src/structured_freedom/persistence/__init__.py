@@ -1,2 +1,1 @@
 """Persistence and database integration."""
-
