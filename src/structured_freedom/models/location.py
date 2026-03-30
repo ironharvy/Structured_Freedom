@@ -44,8 +44,7 @@ def build_mvp_map() -> dict[str, Location]:
             id="village",
             name="Village Square",
             description=(
-                "The heart of a small village."
-                " Paths branch in every direction."
+                "The heart of a small village. Paths branch in every direction."
             ),
             connections={
                 "north": "gate",

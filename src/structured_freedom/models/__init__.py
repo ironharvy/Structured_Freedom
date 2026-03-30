@@ -9,7 +9,8 @@ from structured_freedom.models.npc import (
 from structured_freedom.models.player import Player, PlayerStats, QuestState
 from structured_freedom.models.world_state import WorldState
 
-__all__ = ["Item", 
+__all__ = [
+    "Item",
     "Location",
     "WorldState",
     "Player",
