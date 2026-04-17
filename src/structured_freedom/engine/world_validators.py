@@ -172,3 +172,76 @@ def validate_use(player: Player, world: WorldState, item_id: str) -> ActionResul
         success=True,
         message=f"You use {item.name}.",
     )
+
+
+# ---------------------------------------------------------------------------
+# Examine
+# ---------------------------------------------------------------------------
+
+
+def validate_examine(
+    player: Player, world: WorldState, target: str
+) -> ActionResult:
+    """Check whether *target* is examinable from the player's current location."""
+    if target == "location" or target in {"here", "around", "room", ""}:
+        location = world.locations.get(player.current_location)
+        if location is None:
+            return ActionResult(success=False, message="You seem to be nowhere.")
+        return ActionResult(
+            success=True,
+            message=f"{location.name}: {location.description}",
+            state_changes={"examined": "location", "location_id": player.current_location},
+        )
+
+    for item in world.items_at(player.current_location):
+        if target in {item.id.lower(), item.name.lower()}:
+            return ActionResult(
+                success=True,
+                message=f"{item.name}: {item.description}",
+                state_changes={"examined": "item", "item_id": item.id},
+            )
+    for item_id in player.inventory:
+        item = world.items.get(item_id)
+        if item and target in {item.id.lower(), item.name.lower()}:
+            return ActionResult(
+                success=True,
+                message=f"{item.name}: {item.description}",
+                state_changes={"examined": "item", "item_id": item.id},
+            )
+
+    return ActionResult(
+        success=False,
+        message=f"You don't see {target!r} here.",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Talk
+# ---------------------------------------------------------------------------
+
+
+def validate_talk(
+    player: Player, world: WorldState, npc_id: str, npcs: dict
+) -> ActionResult:
+    """Check whether the player can talk to an NPC at the current location."""
+    npc = npcs.get(npc_id)
+    if npc is None:
+        npc = next(
+            (n for n in npcs.values() if n.name.lower() == npc_id.lower()),
+            None,
+        )
+    if npc is None:
+        return ActionResult(
+            success=False,
+            message=f"There's nobody called {npc_id!r} here.",
+        )
+    if npc.current_location != player.current_location:
+        return ActionResult(
+            success=False,
+            message=f"{npc.name} is not here.",
+        )
+    return ActionResult(
+        success=True,
+        message=f"You approach {npc.name}.",
+        state_changes={"talk_target": npc.id},
+    )

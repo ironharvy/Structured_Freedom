@@ -112,3 +112,41 @@ entry instead of silently rewriting history.
   - shared live edits in one folder create avoidable conflicts and stale state
 - Notes:
   - same-folder parallel work should be treated as a fallback, not the default
+
+## D-009 React Frontend Replaces CLI-First Decision
+
+- Status: `active`
+- Date: `2026-04-16`
+- Decision: The primary client for MVP is a React/Vite/TypeScript web UI. D-002 (Python CLI first) is superseded.
+- Why:
+  - user confirmed React as the target frontend during intake
+  - the core gameplay loop (location panel, action log, inventory) maps naturally to a web layout
+  - the CLI is retained as a debug/development utility only
+- Notes:
+  - supersedes D-002
+  - frontend lives in `frontend/` at repo root
+
+## D-010 LiteLLM As Provider Abstraction For DSPy
+
+- Status: `active`
+- Date: `2026-04-16`
+- Decision: All DSPy LM calls route through LiteLLM, which is already installed. Provider (Ollama, OpenAI, Anthropic) is set via `AI_PROVIDER` env var.
+- Why:
+  - LiteLLM is already in the venv
+  - single switch to change providers without code changes
+  - consistent interface for Ollama (local dev) and cloud providers (production)
+- Notes:
+  - default dev provider remains Ollama (D-004 still active for local dev)
+  - production provider to be decided when cloud deployment is scoped
+
+## D-011 FastAPI Added As Backend Framework
+
+- Status: `active`
+- Date: `2026-04-16`
+- Decision: FastAPI + Uvicorn added as the HTTP layer. `fastapi` and `uvicorn[standard]` added to `pyproject.toml` dependencies.
+- Why:
+  - async-native, Pydantic v2-native, OpenAPI docs out of the box
+  - already referenced in `docs/mvp.md` technical baseline
+- Notes:
+  - `httpx` added to dev dependencies for async test client
+  - new dependencies require human review per AGENTS.md before merge

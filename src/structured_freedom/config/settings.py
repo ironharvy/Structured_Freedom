@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     app_env: str = Field(default="development", alias="APP_ENV")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     database_url: str = Field(
-        default="sqlite+pysqlite:///:memory:",
+        default="sqlite+pysqlite:///structured_freedom.db",
         alias="DATABASE_URL",
     )
     ai_provider: str = Field(default="ollama", alias="AI_PROVIDER")
@@ -21,6 +21,10 @@ class Settings(BaseSettings):
         default="http://localhost:11434",
         alias="OLLAMA_BASE_URL",
     )
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
+    api_host: str = Field(default="0.0.0.0", alias="API_HOST")
+    api_port: int = Field(default=8000, alias="API_PORT")
 
     model_config = SettingsConfigDict(
         env_file=".env",
