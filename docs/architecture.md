@@ -1,337 +1,184 @@
-# Architecture
+# Architecture: Structured Freedom
 
-## Purpose
+> Last updated by: Tech Lead
+> Decision references: [DEC-0001]–[DEC-0010]
 
-This document defines the intended system architecture for Structured Freedom at
-the MVP stage and the design constraints that should survive later growth.
+## System Overview
 
-The primary goal is to support natural-language play inside a deterministic,
-persistent world where AI assists interpretation and narration without becoming
-the source of truth.
+Structured Freedom is a server-authoritative, single-player text adventure engine where an LLM assists with interpretation and narration but never controls canonical world state. The backend is a Python FastAPI service. The frontend is a React/Vite web client. The game engine is a deterministic rules layer that validates all actions before applying state changes.
 
-## Architectural Principles
+The primary architectural principle: **the engine is authoritative, AI is advisory**. Any LLM output that would bypass engine validation is silently ignored or narrated as a failed action.
 
-- The engine is authoritative over canonical state.
-- AI is an assistant to the engine, not a replacement for it.
-- Persistence is first-class.
-- Rejection behavior matters as much as success behavior.
-- The MVP should optimize for clarity and testability, not breadth.
-- The system should allow future model/provider expansion without premature
-  complexity.
+The turn pipeline is the system's critical path: raw player text → structured intent (AI) → engine validation → state mutation → prose narration (AI) → persistence → client response.
 
-## High-Level Shape
+## Technology Stack
 
-The architecture should be server-authoritative even though the MVP starts with
-a Python CLI client.
+| Area | Choice | Rationale |
+|------|--------|-----------|
+| Language | Python 3.12 | Existing codebase, strong typing, async support |
+| Web framework | FastAPI 0.115+ | Async-native, Pydantic-native, clean OpenAPI output |
+| ASGI server | Uvicorn | Standard FastAPI runtime |
+| AI orchestration | DSPy 2.6 | Typed signatures, structured outputs, provider-agnostic |
+| AI provider abstraction | LiteLLM | Single interface to Ollama, OpenAI, Anthropic |
+| Default LLM (dev) | Ollama (llama3.1:8b) | Local, free, fast enough for MVP validation |
+| ORM | SQLAlchemy 2.0 | Already in stack, async-capable, explicit schema |
+| Migrations | Alembic | Already installed, works with SQLAlchemy |
+| Database (dev) | SQLite | Zero-config local development |
+| Database (prod) | PostgreSQL 16 | Relational consistency for canonical state |
+| Domain models | Pydantic v2 | Already in use, excellent validation |
+| Testing | pytest | Already in use |
+| Frontend framework | React 18 + Vite | Fast dev server, TypeScript support, minimal config |
+| Frontend language | TypeScript | Type safety for API contract |
+| HTTP client (frontend) | fetch / axios | Standard; no heavy framework needed |
+| Linting | Ruff | Already in use |
 
-At a high level:
+> References: [DEC-0003], [DEC-0004], [DEC-0009], [DEC-0010]
 
-- client submits natural-language actions
-- application layer builds execution context
-- AI layer helps interpret or narrate
-- engine validates and resolves actions
-- persistence layer stores canonical results
-- client receives the final outcome
+## Component Breakdown
 
-## Main Components
+### Client (React/Vite)
+Responsibility: render game state and submit player actions to the API.
+Interfaces: REST `POST /api/turns`, `GET /api/sessions/{id}`.
+Contains: LocationPanel, GameLog, ActionInput, InventoryPanel, QuestPanel.
 
-### Client
+### API Layer (FastAPI)
+Responsibility: HTTP boundary — receive requests, delegate to app layer, return responses.
+Interfaces: `POST /api/sessions`, `GET /api/sessions/{id}`, `POST /api/sessions/{id}/turns`.
+Contains: session router, turn router, response schemas.
 
-MVP decision:
+### App Layer (Turn Orchestrator)
+Responsibility: coordinate a single turn from raw input to final result.
+Interfaces: `run_turn(session_id, action_text)` → `TurnResult`.
+Does not contain business rules or AI calls; it delegates to AI, Engine, and Persistence.
 
-- Python CLI client first
-
-Responsibilities:
-
-- collect player input
-- display narration and system feedback
-- show current location, inventory, and objective state
-- remain thin and disposable
-
-The client should not contain game rules or canonical state logic.
-
-### Application Layer
-
-This layer coordinates a turn from input to result.
-
-Responsibilities:
-
-- receive player action requests
-- load necessary world and player context
-- call AI services where appropriate
-- invoke deterministic validation and resolution
-- persist the outcome
-- format the response returned to the client
-
-This is orchestration code, not core simulation logic.
+### AI Layer (DSPy Modules)
+Responsibility: natural language ↔ structured data, constrained by explicit signatures.
+Sub-components:
+- `IntentInterpreter`: player text + world context → `ParsedIntent`
+- `Narrator`: `ActionResult` + world context → prose string
+- `NPCDialogue`: `NPCDialogueContext` + player speech → NPC response text
+Interfaces: all modules accept typed inputs and return typed outputs; never receive mutable state.
 
 ### Simulation Engine
-
-This is the core of the system.
-
-Responsibilities:
-
-- define canonical world rules
-- validate whether actions are possible
-- resolve state transitions
-- reject unsupported or impossible actions
-- protect world consistency
-
-This layer must remain deterministic as much as possible.
-
-Examples of decisions that belong here:
-
-- whether a door is locked
-- whether the player has an item
-- whether an NPC is present
-- whether a claimed action is physically or fictionally possible in the world
-- what state changes occur after a successful action
-
-### AI Layer
-
-The AI layer should be a bounded subsystem behind explicit interfaces.
-
-MVP responsibilities:
-
-- intent interpretation
-- narration generation
-
-Later responsibilities:
-
-- NPC dialogue support
-- summarization
-- memory distillation
-- story seeding
-
-The AI layer must not directly mutate canonical state.
+Responsibility: validate intents against world state and apply deterministic state transitions.
+Interfaces: `validate_*(player, world, ...)` → `ActionResult`; `resolve_*(player, world, ...)` → None.
+Already implemented for: move, take, drop, use. Needs: examine, talk, custom action routing.
 
 ### Persistence Layer
+Responsibility: save and load canonical game state (player, world, NPCs, quests).
+Sub-components:
+- `ORM models`: SQLAlchemy table definitions
+- `Repository`: `GameRepository` with load/save per entity
+- `database.py`: engine + session factory
+Interfaces: `GameRepository.load_session(id)`, `GameRepository.save_session(session)`.
 
-Responsibilities:
+### World / Fixtures
+Responsibility: define the canonical MVP world content.
+Sub-components:
+- `fixtures.py`: locations, items, NPCs, initial world state for MVP scenario
+- `scenario.py`: quest definitions and initial world flags for the village gate scenario
 
-- store canonical player and world state
-- store quest and objective progression
-- store event history
-- load state needed for each turn
-- support save/reload and test isolation
+## Data Model
 
-This layer should hide database-specific details from the engine.
+### Session
+Top-level container: player state + world state + NPCs for one playthrough.
+Fields: `id`, `player`, `world`, `npcs: dict[str, NPC]`, `turn_number`, `created_at`, `updated_at`.
+
+### Player (existing)
+Fields: `id`, `name`, `current_location`, `stats`, `inventory`, `quests`.
+
+### WorldState (existing)
+Fields: `locations: dict[str, Location]`, `items: dict[str, Item]`, `flags: dict[str, bool]`.
+
+### Location (existing)
+Fields: `id`, `name`, `description`, `connections: dict[str, str]`.
+
+### Item (existing)
+Fields: `id`, `name`, `description`, `location_id`, `takeable`, `usable`.
+
+### NPC (existing)
+Fields: `id`, `name`, `role`, `description`, `current_location`, `disposition`, `state`, `memory`.
+
+### TurnRecord
+Append-only event log entry per turn.
+Fields: `id`, `session_id`, `turn_number`, `raw_input`, `parsed_intent`, `validation_success`, `state_changes`, `narration`, `created_at`.
 
 ## Turn Pipeline
 
-The core turn loop should work like this:
-
-1. The client submits a natural-language action.
-2. The application layer loads current player and world context.
-3. The AI intent interpreter converts the input into structured intent.
-4. The engine validates the structured intent against actual world state.
-5. If invalid, the engine returns a rejection result.
-6. If valid, the engine resolves deterministic state changes.
-7. The AI narration layer generates a response from the validated result.
-8. The persistence layer stores the updated canonical state and event record.
-9. The client receives the final result.
-
-Important rule:
-
-- AI may help interpret what the player means
-- AI may help narrate what happened
-- the engine decides what actually happened
-
-## Handling Invalid Or Absurd Actions
-
-This system must resist the normal failure mode of unconstrained LLM apps:
-accepting impossible inputs because they are easy to improvise around.
-
-Examples:
-
-- "I build a rocketship and fly away."
-- "I take a bazooka out of my ass and fire at the king."
-- "I teleport into the vault."
-
-Required behavior:
-
-- the intent layer can classify these actions
-- the engine must reject them if the world does not support them
-- the narrator should explain the rejection in-world or systemically
-- persistence should record no illegal state transition
-
-This rejection path is a core feature, not an edge case.
-
-## State Model
-
-The canonical state should remain structured and explicit.
-
-MVP state categories:
-
-- player
-- locations
-- items
-- NPCs
-- quests or objectives
-- world flags
-- event history
-
-Suggested conceptual entities:
-
-- `Player`
-- `Location`
-- `Item`
-- `Npc`
-- `Quest`
-- `WorldEvent`
-- `ActionResult`
-
-Generated narration should not be treated as canonical state. It is a derived
-artifact attached to validated outcomes.
-
-## Persistence Strategy
-
-Recommended primary store:
-
-- `PostgreSQL`
-
-Recommended MVP usage:
-
-- store canonical world state in relational tables
-- store event history for debugging and replay
-- keep schema explicit for inventory, locations, NPC state, and quest progress
-
-Optional supporting stores later:
-
-- `Redis` for cache or background jobs
-- document storage for generated artifacts if needed
-- object storage for media
-
-The MVP does not require MongoDB Atlas.
-
-## AI Provider Architecture
-
-The system should support multiple providers eventually, but the MVP should
-implement one provider and one model first.
-
-Current MVP decision:
-
-- start with local `Ollama`
-- design interfaces so other providers can be added later
-
-Provider abstraction should separate:
-
-- model invocation
-- prompt or signature definition
-- task-level orchestration
-
-The engine should not care whether the underlying provider is Ollama, OpenAI,
-Anthropic, or something else.
-
-## DSPy Role
-
-`DSPy` should be the preferred way to structure AI interactions.
-
-Recommended uses in MVP:
-
-- intent extraction into structured action candidates
-- narration generation from validated action results
-
-Rules:
-
-- keep DSPy modules task-specific
-- prefer typed or schema-constrained outputs
-- validate all outputs before use
-- version prompts or signatures intentionally
-
-Avoid:
-
-- embedding large ad hoc prompts throughout the codebase
-- letting DSPy modules bypass domain rules
-- mixing narration concerns with simulation concerns
-
-## Configuration Strategy
-
-`.env` should hold environment-specific values and secrets, but it should not
-become the whole configuration system.
-
-Recommended pattern:
-
-- `.env` stores environment variables and credentials
-- application config code loads and validates them
-- model/task mapping lives in typed config, not scattered string lookups
-
-For MVP, one model is enough.
-
-Suggested MVP approach:
-
-- `.env` contains provider choice, base URL, and default model
-- a Python config module loads these values
-- later, task-specific model routing can move into structured config
-
-This keeps the MVP simple while leaving room for later:
-
-- separate intent and narration models
-- per-environment overrides
-- provider-specific defaults
-
-## Suggested Code Boundaries
-
-One reasonable early structure is:
-
-- `src/config/`
-- `src/engine/`
-- `src/ai/`
-- `src/persistence/`
-- `src/app/`
-- `src/client/`
-- `tests/`
-
-Responsibility split:
-
-- `config`: typed settings and environment loading
-- `engine`: rules, validation, world logic, state transitions
-- `ai`: DSPy modules, provider clients, response shaping
-- `persistence`: repositories, database models, migrations
-- `app`: turn orchestration and service entry points
-- `client`: Python CLI MVP interface
-
-## Logging And Observability
-
-The system should log the turn pipeline clearly.
-
-Minimum logging per action:
-
-- player action input
-- parsed structured intent
-- validation outcome
-- applied state changes
-- AI narration request and result boundaries
-- persistence success or failure
-
-Local development logs should be colored and readable. Production logging can be
-more structured and less decorative later.
-
-## Testing Strategy
-
-Architecture must support testing from the start.
-
-Priority test layers:
-
-- unit tests for engine validation and rules
-- unit tests for AI output parsing and contracts
-- integration tests for turn execution
-- persistence tests for save/reload behavior
-- regression tests for impossible or world-breaking prompts
-
-The most important invariant is:
-
-- no AI-generated output should be able to bypass engine rules and become canon
-
-## MVP Implementation Bias
-
-At MVP stage, choose the simpler option when there is doubt:
-
-- Python CLI before web client
-- one AI provider before many providers
-- one model before per-task model routing
-- explicit state tables before flexible document-heavy storage
-- deterministic rule checks before agentic autonomy
-
-The architecture should remain extensible, but the MVP should not be burdened
-by solving future complexity too early.
+```
+1. Client  → POST /api/sessions/{id}/turns  { "action": "..." }
+2. API     → TurnOrchestrator.run_turn(session_id, action_text)
+3. App     → load Session from repository
+4. AI      → IntentInterpreter.parse(action_text, world_context) → ParsedIntent
+5. Engine  → validate_*(player, world, intent) → ActionResult
+           → if invalid: skip to step 8
+6. Engine  → resolve_*(player, world, intent) → mutate state
+7. Persist → repository.save_session(session)
+8. AI      → Narrator.narrate(action_result, world_context) → prose
+9. Persist → repository.append_turn_record(turn)
+10. API    → return TurnResponse { success, narration, state_snapshot }
+```
+
+## API Design
+
+Base path: `/api`
+Auth: none (MVP)
+Content-type: `application/json`
+
+```
+POST   /api/sessions                → create new session, returns session_id + initial state
+GET    /api/sessions/{id}           → get current session state
+POST   /api/sessions/{id}/turns     → execute a turn, returns TurnResponse
+GET    /api/sessions/{id}/turns     → turn history
+```
+
+Response shapes are defined as Pydantic models in `app/api/schemas.py`.
+
+## Coding Standards
+
+- All new modules in `src/structured_freedom/`
+- DSPy modules live in `src/structured_freedom/ai/`
+- ORM models live in `src/structured_freedom/persistence/orm/`
+- Repositories live in `src/structured_freedom/persistence/repositories/`
+- World content lives in `src/structured_freedom/world/`
+- FastAPI app and routers live in `src/structured_freedom/app/`
+- No raw LLM prompts outside DSPy signatures
+- Engine functions remain pure (no I/O, no AI calls)
+- All public functions have type annotations
+- Test files mirror source structure under `tests/`
+
+## Infrastructure
+
+### Project Structure
+```
+structured_freedom/
+├── src/structured_freedom/
+│   ├── ai/             # DSPy modules
+│   ├── app/            # FastAPI app + turn orchestrator
+│   ├── client/         # CLI (keep for debugging)
+│   ├── config/         # Settings
+│   ├── engine/         # Deterministic rules
+│   ├── models/         # Pydantic domain models
+│   ├── persistence/    # ORM + repositories
+│   └── world/          # Fixtures + scenario content
+├── frontend/           # React/Vite web client
+│   ├── src/
+│   │   ├── api/        # API client
+│   │   ├── components/ # UI components
+│   │   └── types/      # TypeScript types
+│   └── package.json
+├── alembic/            # Database migrations
+├── docs/
+└── tests/
+```
+
+### CI/CD Pipeline
+Stages: ruff lint → pytest → (frontend: npm ci + tsc + vitest)
+
+### Containerization
+Dockerfile: multi-stage, Python backend + static frontend build. Not required for MVP local dev.
+
+## Open Questions
+- SPIKE-001: DSPy structured output reliability with local Ollama — test before committing to ChainOfThought vs Predict
+- SPIKE-002: WebSocket streaming for narration (post-MVP)
+- SPIKE-003: World artifact ingestion format

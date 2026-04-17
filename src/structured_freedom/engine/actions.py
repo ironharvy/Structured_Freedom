@@ -1,6 +1,9 @@
-"""Action result models for the MVP scaffold."""
+"""Action result and intent models for the engine."""
 
-from dataclasses import dataclass
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass(slots=True)
@@ -9,3 +12,4 @@ class ActionResult:
 
     success: bool
     message: str
+    state_changes: dict[str, Any] = field(default_factory=dict)

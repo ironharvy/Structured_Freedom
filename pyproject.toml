@@ -11,19 +11,24 @@ requires-python = ">=3.12"
 dependencies = [
   "alembic>=1.14,<2.0",
   "dspy>=2.6,<3.0",
+  "fastapi>=0.115,<0.116",
   "pydantic-settings>=2.7,<3.0",
   "rich>=13.9,<14.0",
   "sqlalchemy>=2.0,<3.0",
+  "uvicorn[standard]>=0.34",
 ]
 
 [project.optional-dependencies]
 dev = [
+  "httpx>=0.28",
   "pytest>=8.3,<9.0",
+  "pytest-asyncio>=0.24",
   "ruff>=0.11,<0.12",
 ]
 
 [project.scripts]
 structured-freedom = "structured_freedom.client.cli:main"
+structured-freedom-api = "structured_freedom.app.main:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -41,6 +46,10 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "SIM"]
+ignore = [
+  "B008",   # FastAPI Depends() in default arguments is idiomatic
+  "E501",   # Line length enforced by formatter, not checker
+]
 
 [tool.ruff.format]
 quote-style = "double"
